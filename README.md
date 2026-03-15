@@ -1,15 +1,13 @@
 # Bitsy Asset Injector 🎨👾
 
-A lightweight, browser-based utility designed to seamlessly inject custom pixel art (Sprites, Tiles, or Items) directly into Bitsy game files.
-
-This tool was specifically built for Bitsy forks and mods that utilize **Bitsy Color**. It also supports **HD resolutions (16x16)**.
+A lightweight, browser-based utility designed to seamlessly inject custom art (Sprites, Tiles, or Items) directly into Bitsy game files.
 
 ## ✨ Features
 
 * **Smart Palette Mapping:** Choose to create a brand new palette for your uploaded asset, or dynamically append new colors to your game's existing `PAL 0` to keep your game data clean and organized.
 * **Transparent PNG Support:** Fully supports images with transparent backgrounds. Transparent pixels are automatically assigned to `index 0` (your Bitsy background color), preventing ugly black squares around your sprites.
-* **Dynamic Sizing (HD Mod Ready):** Supports standard `8x8` Bitsy grids as well as `16x16` HD grids. The tool will downscale or format your image to match your chosen grid size.
-* **Engine Compatibility:** Specifically designed to output `DRAW_FORMAT 1` comma-separated values (e.g., `a,0,b,1`) instead of standard unbroken strings, preventing rendering bugs in modified engines.
+* **Dynamic Sizing (HD Mod Ready):** Supports standard `8x8` grids as well as `16x16` HD grids. The tool will downscale or format your image to match your chosen grid size.
+* **Engine Compatibility:** Designed to output either `DRAW_FORMAT 1` comma-separated values (e.g., `a,0,b,1`) or standard unbroken strings (eg., `010101`), preventing rendering bugs in standard and modified engines.
 * **Safe Injection:** Safely parses your `.html` file and appends data without overwriting your game title, version headers, or existing room data.
 
 ## 🚀 How to Use
@@ -24,13 +22,6 @@ This tool was specifically built for Bitsy forks and mods that utilize **Bitsy C
    * **Name:** Give your asset a recognizable name (e.g., `magic_tree`).
 5. **Inject:** Click **"Inject Asset & Colors"**. The tool will automatically download a new file prefixed with `HD_` containing your injected data.
 6. **Play:** Open the newly downloaded `.html` file in your Bitsy editor. Your new asset and colors will be waiting for you in the Paint and Color tabs!
-
-## ⚠️ Requirements
-
-This tool is tailored for a specific Bitsy environment. Your game file must include the following tags in its data block to render the output correctly:
-
-* `! DRAW_FORMAT 1` (Requires commas between pixel data)
-* Must be compatible with base36 color indexing (0-9, a-z).
 
 ## 🛠️ Built With
 

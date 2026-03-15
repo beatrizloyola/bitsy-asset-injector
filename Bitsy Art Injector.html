@@ -3,19 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <title>Bitsy Color & HD Asset Injector</title>
+
     <style>
-        body { font-family: sans-serif; max-width: 650px; margin: 20px auto; line-height: 1.6; background: #222; color: #eee; padding: 20px; }
-        .box { background: #333; padding: 20px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; }
-        label { font-weight: bold; display: block; margin-top: 15px; color: #13978c; }
-        input, select, button { width: 100%; padding: 12px; margin-top: 8px; box-sizing: border-box; border-radius: 4px; border: 1px solid #555; background: #444; color: white; }
-        button { background: #13978c; border: none; cursor: pointer; font-size: 1.1rem; margin-top: 25px; transition: 0.2s; padding: 15px; font-weight: bold;}
-        button:hover { background: #18b6a9; }
-        canvas { display: none; }
+        body {
+            font-family: sans-serif;
+            max-width: 650px;
+            margin: 20px auto;
+            line-height: 1.6;
+            background: #222;
+            color: #eee;
+            padding: 20px;
+        }
+
+        .box { 
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            margin-bottom: 20px;
+        }
+
+        label { 
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+            color: #d488ab;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            box-sizing: border-box;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #444;
+            color: white;
+        }
+
+        button {
+            background: #d488ab;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin-top: 25px;
+            transition: 0.2s;
+            padding: 15px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #7f4d65;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px; }
+
+        .row > div {
+            flex: 1;
+        }
+
+        h2 {
+            text-align: center;
+        }
     </style>
+
 </head>
+
 <body>
 
-    <h2>Bitsy Art Injector</h2>
+    <h2>Bitsy Asset Injector</h2>
     
     <div class="box">
         <label>1. Upload Bitsy Game (.html)</label>
@@ -24,36 +86,53 @@
         <label>2. Upload Image (Supports Transparent PNGs)</label>
         <input type="file" id="imageInput" accept="image/*">
 
-        <label>3. Asset Category & Size</label>
-        <div style="display: flex; gap: 10px;">
-            <select id="assetType">
-                <option value="TIL">Tile (Environment)</option>
-                <option value="SPR">Sprite (Character)</option>
-                <option value="ITM">Item (Collectable)</option>
-            </select>
-            <select id="assetSize">
-                <option value="8">8x8 (Standard)</option>
-                <option value="16">16x16 (HD)</option>
-            </select>
+        <div class="row">
+            <div>
+                <label>3. Bitsy Version</label>
+                <select id="bitsyVersion">
+                    <option value="color">Bitsy Color</option>
+                    <option value="standard">Standard (3 color)</option>
+                </select>
+            </div>
+            <div>
+                <label>4. Asset Category</label>
+                <select id="assetType">
+                    <option value="TIL">Tile (Environment)</option>
+                    <option value="SPR">Sprite (Character)</option>
+                    <option value="ITM">Item (Collectable)</option>
+                </select>
+            </div>
         </div>
 
-        <label>4. Palette Mode</label>
-        <select id="paletteMode">
-            <option value="pal0">Add colors to existing PAL 0</option>
-            <option value="new">Create a brand new Palette</option>
-        </select>
+        <div class="row">
+            <div>
+                <label>5. Asset Size</label>
+                <select id="assetSize">
+                    <option value="8">8x8 (Standard)</option>
+                    <option value="16">16x16 (Bitsy HD)</option>
+                </select>
+            </div>
+            <div>
+                <label>6. Palette Mode</label>
+                <select id="paletteMode">
+                    <option value="pal0">Use/Add to existing PAL 0</option>
+                    <option value="new">Create a brand new Palette</option>
+                </select>
+            </div>
+        </div>
 
-        <label>5. Asset Name</label>
+        <label>7. Asset Name</label>
         <input type="text" id="assetName" placeholder="my_new_asset">
     </div>
 
-    <button id="processBtn">Inject Asset & Colors</button>
+    <button id="processBtn">Inject Asset</button>
 
     <canvas id="conversionCanvas"></canvas>
 
     <script>
         const gameInput = document.getElementById('gameInput');
         const imageInput = document.getElementById('imageInput');
+        const bitsyVersion = document.getElementById('bitsyVersion');
         const assetType = document.getElementById('assetType');
         const assetSize = document.getElementById('assetSize');
         const paletteMode = document.getElementById('paletteMode');
@@ -70,7 +149,6 @@
 
             const gameText = await gameInput.files[0].text();
             
-            // 1. First, we need to extract the Bitsy data blocks safely
             const dataScriptStart = gameText.indexOf('<script type="text/bitsyGameData" id="exportedGameData">');
             const dataScriptEnd = gameText.indexOf('</' + 'script>', dataScriptStart);
             
@@ -83,7 +161,7 @@
             const afterData = gameText.substring(dataScriptEnd);
             const dataLines = beforeData.split('\n');
 
-            // 2. Parse existing PAL 0 if the user wants to add to it
+            // Parse existing PAL 0 
             let existingPal0Colors = [];
             let pal0Name = "palette";
             let pal0StartLine = -1;
@@ -106,7 +184,6 @@
                         } else if (/^\d{1,3},\d{1,3},\d{1,3}$/.test(line)) {
                             existingPal0Colors.push(line);
                         } else if (line === '' || /^[A-Z0-9_]+ /.test(line)) { 
-                            // Reached empty line or the start of a new tag before finding NAME
                             pal0EndLine = i - 1;
                             break;
                         }
@@ -114,62 +191,88 @@
                 }
             }
 
-            // 3. Process the Image on Canvas
             const img = new Image();
             img.src = URL.createObjectURL(imageInput.files[0]);
 
             img.onload = () => {
                 const size = parseInt(assetSize.value, 10);
+                const isStandard = bitsyVersion.value === 'standard';
                 
                 canvas.width = size;
                 canvas.height = size;
-                // Important: clearRect ensures transparent areas stay transparent on the canvas
                 ctx.clearRect(0, 0, size, size);
                 ctx.drawImage(img, 0, 0, size, size);
                 
                 const imageData = ctx.getImageData(0, 0, size, size).data;
                 
-                // Initialize the palette array
                 let palette = paletteMode.value === 'pal0' ? [...existingPal0Colors] : [];
                 let pixelDataLines = [];
                 let currentRow = []; 
 
                 const getRGB = (i) => `${imageData[i]},${imageData[i+1]},${imageData[i+2]}`;
+                
+                // Get top-left pixel to help identify solid backgrounds in Standard mode
+                const topRgb = getRGB(0);
+                const topAlpha = imageData[3];
 
                 for (let i = 0; i < imageData.length; i += 4) {
                     const alpha = imageData[i+3];
+                    const rgb = getRGB(i);
                     let colorIndex;
 
-                    // If the pixel is mostly transparent, map it to the background (index 0)
-                    if (alpha < 128) {
-                        // If it's a brand new palette and empty, push black as a placeholder background
-                        if (palette.length === 0) {
-                            palette.push("0,0,0"); 
+                    if (isStandard) {
+                        // --- STANDARD BITSY LOGIC (2 Colors) ---
+                        let isBg = false;
+                        if (alpha < 128) {
+                            isBg = true;
+                        } else if (topAlpha >= 128 && rgb === topRgb) {
+                            isBg = true;
                         }
-                        colorIndex = 0;
-                    } else {
-                        // Otherwise, handle it as a solid color
-                        const rgb = getRGB(i);
-                        colorIndex = palette.indexOf(rgb);
 
-                        // If the color isn't in our current palette yet, add it
-                        if (colorIndex === -1) {
-                            palette.push(rgb);
-                            colorIndex = palette.length - 1;
+                        colorIndex = isBg ? 0 : 1;
+
+                        if (paletteMode.value === 'new') {
+                            if (palette.length === 0) {
+                                palette.push(isBg ? (alpha < 128 ? "0,0,0" : rgb) : "0,0,0");
+                            }
+                            if (palette.length < 2 && !isBg) {
+                                if (palette.length === 0) palette.push("0,0,0");
+                                palette.push(rgb); 
+                            }
+                        }
+
+                    } else {
+                        // --- BITSY COLOR LOGIC (Multi-color) ---
+                        if (alpha < 128) {
+                            if (palette.length === 0) palette.push("0,0,0"); 
+                            colorIndex = 0;
+                        } else {
+                            colorIndex = palette.indexOf(rgb);
+                            if (colorIndex === -1) {
+                                palette.push(rgb);
+                                colorIndex = palette.length - 1;
+                            }
                         }
                     }
 
-                    // Convert the index to base36 for Bitsy (e.g. 10 becomes 'a')
                     currentRow.push(colorIndex.toString(36));
 
-                    // When we reach the end of the row, join with commas
+                    // When we reach the end of the row, determine whether to use commas!
                     if (((i/4) + 1) % size === 0) {
-                        pixelDataLines.push(currentRow.join(','));
+                        const separator = isStandard ? '' : ','; // <-- AUTOMATIC FORMAT DETECTED HERE
+                        pixelDataLines.push(currentRow.join(separator));
                         currentRow = [];
                     }
                 }
 
-                // 4. File Injection Logic
+                // Ensure standard Bitsy palettes have exactly 3 colors
+                if (isStandard && paletteMode.value === 'new') {
+                    if (palette.length === 0) palette.push("0,0,0");
+                    if (palette.length === 1) palette.push("255,255,255");
+                    if (palette.length === 2) palette.push(palette[1]); 
+                }
+
+                // File Injection Logic
                 let updatedDataString = beforeData;
                 let dataToAppend = "";
                 const safeAssetName = assetName.value.trim() || 'new_asset';
@@ -177,35 +280,28 @@
                 let assetData = `\n${assetType.value} ${assetId}\n${pixelDataLines.join('\n')}\nNAME ${safeAssetName}\n`;
 
                 if (paletteMode.value === 'pal0' && pal0StartLine !== -1) {
-                    // Splicing the new colors into existing PAL 0
                     const newPal0Block = `PAL 0\n${palette.join('\n')}\nNAME ${pal0Name}`;
                     const linesToReplace = pal0EndLine - pal0StartLine + 1;
-                    
                     dataLines.splice(pal0StartLine, linesToReplace, newPal0Block);
                     updatedDataString = dataLines.join('\n');
-                    
-                    // Since PAL 0 is updated, we only append the new asset
                     dataToAppend = assetData;
                 } else {
-                    // Creating a brand new palette
                     const palMatches = [...beforeData.matchAll(/^PAL (\d+)/gm)];
                     let nextPalId = palMatches.length > 0 ? Math.max(...palMatches.map(m => parseInt(m[1]))) + 1 : 0;
-
                     let palData = `\nPAL ${nextPalId}\n${palette.join('\n')}\nNAME pal_${safeAssetName}\n`;
                     dataToAppend = palData + assetData;
                 }
 
-                // 5. Construct Final File and Download
                 const updatedHtml = updatedDataString + dataToAppend + afterData;
-                
                 const blob = new Blob([updatedHtml], { type: 'text/html' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = "HD_" + gameInput.files[0].name;
+                a.download = "INJECTED_" + gameInput.files[0].name;
                 a.click();
             };
         });
     </script>
+
 </body>
 </html>
